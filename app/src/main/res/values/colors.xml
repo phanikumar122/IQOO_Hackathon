@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Deep red rather than the usual alert orange. The intervention screen has
+         to look like nothing else on the phone, and in particular nothing like
+         the payment app it is covering. -->
+    <color name="prahari_alert_bg">#FF7F1010</color>
+    <color name="prahari_indigo">#FF2B3A67</color>
+    <color name="prahari_white">#FFFFFFFF</color>
+    <color name="prahari_muted">#FFE7C9C9</color>
+    <!-- The hang-up button. Green on deep red so the safe action is the one a
+         panicking thumb finds without reading, and so the button does not inherit
+         the default Material accent, which on this background looks like a
+         mistake. Every colour in this file has exactly one caller; if you add
+         one and do not use it, delete it instead. -->
+    <color name="prahari_safe">#FF1B5E20</color>
+</resources>

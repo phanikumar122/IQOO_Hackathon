@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      Two themes, and the difference between them is the point.
+
+      Theme.Prahari is the calm one: the app you open once, configure, and then
+      forget. Theme.Prahari.Intervention is the one that has to be readable in
+      four seconds by a frightened person who may be seventy years old, in a
+      bright room, without their reading glasses. Hence the large type, the very
+      high contrast, and the full-bleed dark background that no payment app uses.
+    -->
+
+    <style name="Theme.Prahari" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/prahari_indigo</item>
+        <item name="colorOnPrimary">@color/prahari_white</item>
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+    </style>
+
+    <style name="Theme.Prahari.Intervention" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowBackground">@color/prahari_alert_bg</item>
+        <item name="android:statusBarColor">@color/prahari_alert_bg</item>
+        <item name="android:navigationBarColor">@color/prahari_alert_bg</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="TextAppearance.Prahari.Headline" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:textSize">44sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/prahari_white</item>
+    </style>
+
+    <style name="TextAppearance.Prahari.Subhead" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">19sp</item>
+        <item name="android:textColor">@color/prahari_white</item>
+    </style>
+
+    <!-- 20sp minimum for reason lines. Do not shrink this to fit more reasons
+         on screen; show fewer reasons instead. Three lines that are read beat
+         eight that are not. -->
+    <style name="TextAppearance.Prahari.Reason" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">20sp</item>
+        <item name="android:lineSpacingMultiplier">1.25</item>
+        <item name="android:textColor">@color/prahari_white</item>
+    </style>
+
+    <!-- Individual coercion tactics, nested under the language reason. Smaller
+         and dimmer than a reason line, but still 18sp: these are the sentences
+         the user recognises from the last ten minutes, so they are not fine
+         print. Anything below 18sp on this screen is decoration. -->
+    <style name="TextAppearance.Prahari.Tactic" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">18sp</item>
+        <item name="android:lineSpacingMultiplier">1.2</item>
+        <item name="android:textColor">@color/prahari_muted</item>
+    </style>
+
+    <style name="TextAppearance.Prahari.Footer" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/prahari_muted</item>
+    </style>
+</resources>

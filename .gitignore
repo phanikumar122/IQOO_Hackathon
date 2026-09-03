@@ -1,0 +1,21 @@
+# Gradle
+.gradle/
+build/
+local.properties
+captures/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.DS_Store
+
+# Models — never commit these. They are hundreds of megabytes and they belong
+# on the device, pushed with adb, not in the repo or the APK.
+*.task
+*.tflite
+*.bin
+vosk-model-*/
+
+# Signing
+*.jks
+*.keystore

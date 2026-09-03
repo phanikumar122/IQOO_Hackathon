@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Prahari</string>
+
+    <!-- ============ Foreground-service status chip ============
+         Wording matters here: this notification is visible all day, every day.
+         "Watching" is honest and calm. Avoid "protected" (a promise we cannot
+         keep) and avoid anything that reads as an alert when nothing is wrong. -->
+    <string name="channel_guardian">Guardian status</string>
+    <string name="channel_guardian_desc">Shows whether Prahari is dormant or watching a call.</string>
+    <string name="status_dormant">Prahari is on. Nothing to watch.</string>
+    <string name="status_watch">Watching this call</string>
+    <string name="status_warn">This call looks unsafe</string>
+    <string name="status_intervene">Stop — do not send money</string>
+
+    <!-- ============ Alert channel ============
+         A second channel, separate so it can be loud while the status chip stays
+         silent, and so a user can mute warnings without losing the chip that
+         shows the service is alive. -->
+    <string name="channel_alert">Scam warnings</string>
+    <string name="channel_alert_desc">Warns you during a call when Prahari sees signs of a scam. Rare by design.</string>
+
+    <string name="a11y_description">Lets Prahari see the amount on a payment screen during a call, so it can warn you before money leaves your account. Prahari never taps anything for you.</string>
+
+    <!-- ============ Intervention screen ============
+         Second person, present tense, short sentences. Each line should be
+         something the user can verify against their own memory of the last ten
+         minutes. No percentages. No jargon. No blame. -->
+    <string name="intervene_headline">Wait.</string>
+    <string name="intervene_subhead">This looks like a scam call. Here is what Prahari noticed:</string>
+    <string name="intervene_footer">Real police, banks and government officers never ask you to transfer money to prove it is clean. You can hang up. Nothing bad will happen to you for hanging up.</string>
+    <string name="intervene_privacy">Prahari worked this out on your phone. Nothing was sent anywhere and nothing was recorded.</string>
+    <string name="behaviour_only_note">Prahari reached this conclusion from what your phone is doing, without needing to understand a single word that was said.</string>
+
+    <!-- Joined with " · " into one line. Any piece we do not have is left out. -->
+    <string name="context_caller_unknown">Number not in your contacts</string>
+    <string name="context_caller">Call from %1$s</string>
+    <string name="context_duration">%1$d min on this call</string>
+    <string name="context_amount">₹%1$s on the payment screen</string>
+
+    <string name="action_hang_up">Hang up now</string>
+    <string name="action_call_someone">Call someone you trust</string>
+    <string name="action_call_named">Call %1$s</string>
+    <string name="proceed_waiting">I understand the risk — wait %1$ds</string>
+    <string name="proceed_now">I understand the risk, continue anyway</string>
+
+    <!-- ============ Reason lines ============ -->
+    <string name="reason_remote_access">%1$s was installed or opened during this call. That app lets the caller see and control your screen.</string>
+    <string name="reason_payment_open">%1$s is open right now, while you are on a call with a number you do not know.</string>
+    <string name="reason_screen_shared">Your screen is being shared with someone else.</string>
+    <string name="reason_otp">A one-time password arrived while this call was going on.</string>
+    <string name="reason_new_payee">You have never sent money to this person before.</string>
+    <string name="reason_amount">This amount is much larger than you usually send.</string>
+    <string name="reason_long_call">This call from an unknown number has gone on a long time.</string>
+    <string name="reason_language">The caller used pressure tactics that scammers use.</string>
+
+    <!-- ============ Tactic labels ============ -->
+    <string name="tactic_authority">They claimed to be from the police or a government department.</string>
+    <string name="tactic_urgency">They said it must happen immediately.</string>
+    <string name="tactic_secrecy">They told you not to tell anyone.</string>
+    <string name="tactic_stay_on_line">They told you not to hang up.</string>
+    <string name="tactic_otp">They asked you for an OTP.</string>
+    <string name="tactic_arrest">They threatened you with arrest.</string>
+    <string name="tactic_freeze">They threatened to freeze your account.</string>
+    <string name="tactic_transfer_verify">They asked you to transfer money to "verify" it.</string>
+    <string name="tactic_isolation">They told you to go somewhere alone.</string>
+    <string name="tactic_impersonation">They gave a badge number or case number to sound official.</string>
+
+    <!-- ============ Main / onboarding screen ============ -->
+    <string name="main_tagline">Prahari watches for one specific crime: someone on a phone call talking you into sending money.</string>
+    <string name="main_privacy">Nothing leaves this phone. Prahari has no internet permission at all — you can check that yourself in the app info screen.</string>
+    <string name="main_enable">Turn Prahari on</string>
+    <string name="main_disable">Turn Prahari off</string>
+    <string name="main_engine">Engine: %1$s</string>
+    <string name="main_permissions_title">Permissions Prahari needs</string>
+    <string name="perm_grant">Grant</string>
+    <string name="perm_granted">Granted</string>
+    <string name="perm_runtime">Phone, SMS and microphone</string>
+    <string name="perm_overlay">Show the warning over other apps</string>
+    <string name="perm_notifications">Read payment notifications</string>
+    <string name="perm_accessibility">See the amount on a payment screen</string>
+    <string name="perm_usage">Usage access</string>
+
+    <!-- ============ Trusted contact ============ -->
+    <string name="trusted_title">Someone you trust</string>
+    <string name="trusted_help">If Prahari ever warns you during a call, it will offer to ring this person. Scammers always say "tell nobody" — this is the one tap that breaks that. Stored on this phone only.</string>
+    <string name="trusted_name_hint">Their name</string>
+    <string name="trusted_number_hint">Their phone number</string>
+    <string name="trusted_save">Save</string>
+    <!-- Replaces trusted_save once a contact exists. The permission rows above
+         all say whether they are done; this step is the sixth one from the
+         user's point of view, so it should say so too. Deliberately not a
+         disabled button — unlike a granted permission, a trusted contact is
+         something people genuinely need to change. -->
+    <string name="trusted_save_done">Saved  ✓   tap to change</string>
+    <string name="trusted_saved">Saved. Prahari will offer to call %1$s.</string>
+    <string name="trusted_incomplete">Enter a name and a number.</string>
+
+    <!-- ============ Demo controls (debug builds only) ============
+         Each scenario button labels itself "<title> → <expectation>" from
+         DemoScenarios, so there is no generic "Run" string here. -->
+    <string name="demo_title">Demo scenarios</string>
+    <string name="demo_exit">Exit replay</string>
+    <string name="demo_seed">Seed an ordinary payment history</string>
+    <string name="demo_seeded">Seeded. %1$d past transfers on file.</string>
+
+</resources>

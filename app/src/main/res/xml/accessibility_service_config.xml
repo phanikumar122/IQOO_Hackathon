@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Read-only, and scoped as narrowly as the platform allows.
+
+  canRetrieveWindowContent is what lets us see the amount on a UPI screen.
+  There is no way to ask for less and still get it, which is precisely the
+  argument for this living in the OS instead of in a sideloaded app.
+
+  packageNames restricts the service to the payment and remote-access apps we
+  care about. Keep this list in sync with KnownPackages.kt — if you add an app
+  there and forget it here, the signal silently never fires.
+
+  Note there is no FLAG_REQUEST_FILTER_KEY_EVENTS and no
+  canRequestTouchExplorationMode: we never read keystrokes and never take
+  control of the screen.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/a11y_description"
+    android:notificationTimeout="300"
+    android:packageNames="com.google.android.apps.nbu.paisa.user,net.one97.paytm,com.phonepe.app,in.org.npci.upiapp,com.amazon.mShop.android.shopping,com.sbi.lotusintouch,com.snapwork.hdfc,com.icicibank.imobile,com.axis.mobile,com.msf.kbank.mobile,com.anydesk.anydeskandroid,com.teamviewer.quicksupport.market,com.teamviewer.teamviewer.market.mobile,com.rustdesk.rustdesk,com.microsoft.rdc.androidx,com.zoho.assist.agent,com.airdroid.remotesupport" />

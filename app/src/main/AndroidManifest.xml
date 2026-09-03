@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ================= SIGNAL PERMISSIONS ================= -->
+
+    <!-- Call state: is a call active, ringing, idle -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- Since Android 9 the other party's number is gated behind call log -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <!-- NOTE: no READ_PHONE_NUMBERS. It grants the device's *own* numbers, which
+         Prahari never needs; the caller's number comes from the call-state
+         broadcast under READ_CALL_LOG. Every permission you can delete is one
+         less thing to defend. -->
+
+    <!-- Is the caller known? Consider dropping this entirely and letting the
+         user nominate trusted contacts in-app — less code, better privacy story,
+         and it sidesteps Play's April 2026 contacts policy for API 37+ targets. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <!-- OTP and bank alert SMS. Play restricts these to default SMS/Phone/
+         Assistant handlers, but that is a DISTRIBUTION policy: a sideloaded
+         debug APK with the user granting the permission works fine, which is
+         exactly our situation. As a pre-installed OriginOS service the
+         question does not arise. -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+
+    <!-- Mic audio (Tier 0 input in the hackathon build) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Foreground service. Android 14+ requires the typed permission to match
+         the declared foregroundServiceType below. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Foreground-app detection fallback. Special permission: the user grants
+         it in Settings > Apps > Special access > Usage access. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- The intervention overlay. Holding this ALSO lifts the background
+         activity-launch restriction, which we depend on to put the warning
+         on screen while a payment app is in front. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- The intervention screen vibrates once when it appears. A phone held to
+         the ear is not being looked at. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- NOTE: no RECEIVE_BOOT_COMPLETED, and no boot receiver. Starting a
+         `microphone` foreground service from the background is not allowed on
+         Android 14+ anyway, so auto-start would fail loudly; the user turns
+         Prahari on from MainActivity and that stays the only entry point. -->
+
+    <!-- NOTE: deliberately NO INTERNET permission. This is not a gimmick — it
+         is a verifiable, one-line proof of the whole privacy claim, and a judge
+         can check it. Do not add it "just for logging". -->
+
+    <!-- Remote-access apps the scammer talks the victim into installing.
+         Using <queries> rather than QUERY_ALL_PACKAGES keeps this narrow. -->
+    <queries>
+        <package android:name="com.anydesk.anydeskandroid" />
+        <package android:name="com.teamviewer.quicksupport.market" />
+        <package android:name="com.teamviewer.teamviewer.market.mobile" />
+        <package android:name="com.rustdesk.rustdesk" />
+        <package android:name="com.microsoft.rdc.androidx" />
+        <package android:name="com.zoho.assist.agent" />
+        <package android:name="com.airdroid.remotesupport" />
+    </queries>
+
+    <application
+        android:name=".PrahariApp"
+        android:allowBackup="false"
+        android:icon="@drawable/ic_shield"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Prahari">
+
+        <!-- Onboarding + permission wizard -->
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- The intervention. Shows over the lock screen and turns the screen
+             on, because the victim may be mid-call with the screen dimmed. -->
+        <activity
+            android:name=".ui.InterventionActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Prahari.Intervention" />
+
+        <!-- Always-on (but dormant) guardian -->
+        <service
+            android:name=".service.GuardianService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+        <!-- Payment / UPI notifications -->
+        <service
+            android:name=".signals.PaymentNotificationListener"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- Foreground app + on-screen amount/payee -->
+        <service
+            android:name=".signals.PrahariAccessibilityService"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <receiver
+            android:name=".signals.SmsSignalReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter android:priority="999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Also registered at runtime by GuardianService for the length of every
+             call, which is the path we actually rely on: manifest receivers for
+             implicit broadcasts have been restricted since Android 8 and this one
+             could not be verified on OriginOS. Keeping both costs nothing. -->
+        <receiver
+            android:name=".signals.RemoteAccessWatcher"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
