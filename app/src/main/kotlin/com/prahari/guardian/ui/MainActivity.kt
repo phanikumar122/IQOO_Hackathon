@@ -41,7 +41,12 @@ class MainActivity : AppCompatActivity() {
 
     private val runtimePermissions = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { refresh() }
+    ) {
+        refresh()
+        if (GuardianService.isRunning.value) {
+            GuardianService.start(this)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,17 +74,47 @@ class MainActivity : AppCompatActivity() {
             open(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
         }
 
-        binding.masterSwitch.setOnCheckedChangeListener { _, checked ->
-            if (checked) GuardianService.start(this) else GuardianService.stop(this)
-            binding.masterSwitch.setText(
-                if (checked) R.string.main_disable else R.string.main_enable
-            )
-        }
+        setupMasterSwitch()
 
         binding.btnSaveTrusted.setOnClickListener { saveTrustedContact() }
 
         if (BuildConfig.DEMO_MODE_ENABLED) buildDemoControls()
         observeEngine()
+        observeServiceState()
+    }
+
+    private fun setupMasterSwitch() {
+        binding.masterSwitch.setOnCheckedChangeListener { _, checked ->
+            if (checked) {
+                if (!granted(Manifest.permission.RECORD_AUDIO)) {
+                    toast(getString(R.string.perm_runtime) + " needed first")
+                    binding.masterSwitch.setOnCheckedChangeListener(null)
+                    binding.masterSwitch.isChecked = false
+                    setupMasterSwitch()
+                    runtimePermissions.launch(RUNTIME_PERMISSIONS)
+                    return@setOnCheckedChangeListener
+                }
+                GuardianService.start(this)
+            } else {
+                GuardianService.stop(this)
+            }
+            binding.masterSwitch.setText(
+                if (checked) R.string.main_disable else R.string.main_enable
+            )
+        }
+    }
+
+    private fun observeServiceState() = lifecycleScope.launch {
+        GuardianService.isRunning.collectLatest { running ->
+            if (binding.masterSwitch.isChecked != running) {
+                binding.masterSwitch.setOnCheckedChangeListener(null)
+                binding.masterSwitch.isChecked = running
+                binding.masterSwitch.setText(
+                    if (running) R.string.main_disable else R.string.main_enable
+                )
+                setupMasterSwitch()
+            }
+        }
     }
 
     override fun onResume() {
@@ -209,7 +244,12 @@ class MainActivity : AppCompatActivity() {
                 MaterialButton(this).apply {
                     text = "${scenario.title}  →  ${scenario.expectation}"
                     isAllCaps = false
-                    setOnClickListener { SignalStore.replay(scenario.snapshot) }
+                    setOnClickListener {
+                        if (!GuardianService.isRunning.value && granted(Manifest.permission.RECORD_AUDIO)) {
+                            GuardianService.start(this@MainActivity)
+                        }
+                        SignalStore.replay(scenario.snapshot)
+                    }
                 }
             )
         }

@@ -33,6 +33,7 @@ import android.view.accessibility.AccessibilityNodeInfo
  */
 class PrahariAccessibilityService : AccessibilityService() {
 
+    @Suppress("DEPRECATION")
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val e = event ?: return
         val pkg = e.packageName?.toString()
@@ -66,7 +67,7 @@ class PrahariAccessibilityService : AccessibilityService() {
         if (!SignalStore.current.callActive || !KnownPackages.isPayment(pkg)) return
 
         val root = runCatching { rootInActiveWindow }.getOrNull() ?: return
-        runCatching {
+        try {
             val amount = findAmountPaise(root)
             if (amount != null) {
                 Log.i(TAG, "amount on screen in ${KnownPackages.paymentLabel(pkg)}")
@@ -81,6 +82,8 @@ class PrahariAccessibilityService : AccessibilityService() {
                     p95Paise = TransferHistory.p95Paise(this)
                 )
             }
+        } finally {
+            runCatching { root.recycle() }
         }
     }
 
@@ -94,17 +97,27 @@ class PrahariAccessibilityService : AccessibilityService() {
      * This is a heuristic and should be treated as one — it feeds a 15-point
      * signal, never an intervention on its own.
      */
+    @Suppress("DEPRECATION")
     private fun findAmountPaise(root: AccessibilityNodeInfo): Long? {
         var best: Long? = null
-        fun walk(node: AccessibilityNodeInfo?, depth: Int) {
+        fun walk(node: AccessibilityNodeInfo?, depth: Int, isRoot: Boolean) {
             if (node == null || depth > MAX_DEPTH) return
-            val text = node.text?.toString()
-            if (!text.isNullOrBlank() && text.length <= 24) {
-                parsePaise(text)?.let { if (best == null || it > best!!) best = it }
+            try {
+                val text = (node.text ?: node.contentDescription)?.toString()
+                if (!text.isNullOrBlank() && text.length <= 32) {
+                    parsePaise(text)?.let { if (best == null || it > best!!) best = it }
+                }
+                for (i in 0 until node.childCount) {
+                    val child = runCatching { node.getChild(i) }.getOrNull()
+                    walk(child, depth + 1, false)
+                }
+            } finally {
+                if (!isRoot) {
+                    runCatching { node.recycle() }
+                }
             }
-            for (i in 0 until node.childCount) walk(node.getChild(i), depth + 1)
         }
-        walk(root, 0)
+        walk(root, 0, true)
         return best
     }
 

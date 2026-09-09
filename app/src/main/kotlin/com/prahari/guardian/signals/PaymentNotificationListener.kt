@@ -66,8 +66,10 @@ class PaymentNotificationListener : NotificationListenerService() {
      * `payeeIsNew == true` only, so unknown never masquerades as safe.
      */
     private fun parsePayee(text: String): String? {
-        val payee = PAYEE.find(text)?.groupValues?.get(1)?.trim() ?: return null
-        return payee.takeIf { it.length >= 3 }
+        val raw = PAYEE.find(text)?.groupValues?.get(1)?.trim() ?: return null
+        val cleaned = raw.split(Regex("""\b(successfully|via|using|from|on|ref|upi|credited|debited|is|for|with)\b""", RegexOption.IGNORE_CASE))
+            .firstOrNull()?.trim() ?: raw
+        return cleaned.takeIf { it.length >= 3 }
     }
 
     private companion object {

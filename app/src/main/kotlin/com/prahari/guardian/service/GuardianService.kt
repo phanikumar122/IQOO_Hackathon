@@ -106,6 +106,9 @@ class GuardianService : LifecycleService() {
          *  alternative is a repository layer we do not have time to justify. */
         val assessment: StateFlow<RiskAssessment> = _assessment.asStateFlow()
 
+        private val _isRunning = MutableStateFlow(false)
+        val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
+
         private val _engineLabel = MutableStateFlow("off")
 
         /**
@@ -163,6 +166,7 @@ class GuardianService : LifecycleService() {
         // MainActivity, after the permission wizard. Do not add a BOOT_COMPLETED
         // auto-start without rethinking this.
         startForeground(NOTIFICATION_ID, buildNotification(RiskLevel.DORMANT, null))
+        _isRunning.value = true
 
         callMonitor = CallStateMonitor(this, lifecycleScope)
         transcriber = StreamingTranscriber(this)
@@ -182,6 +186,10 @@ class GuardianService : LifecycleService() {
             stopSelf()
             return START_NOT_STICKY
         }
+        _isRunning.value = true
+        if (::callMonitor.isInitialized) {
+            callMonitor.start()
+        }
         return START_STICKY
     }
 
@@ -194,6 +202,7 @@ class GuardianService : LifecycleService() {
         foregroundPoller.stop()
         unregisterRemoteWatcher()
         callMonitor.stop()
+        _isRunning.value = false
         _engineLabel.value = "off"
         super.onDestroy()
     }
@@ -327,7 +336,7 @@ class GuardianService : LifecycleService() {
         val filter = IntentFilter(Intent.ACTION_PACKAGE_ADDED).apply { addDataScheme("package") }
         runCatching {
             ContextCompat.registerReceiver(
-                this, remoteAccessWatcher, filter, ContextCompat.RECEIVER_NOT_EXPORTED
+                this, remoteAccessWatcher, filter, ContextCompat.RECEIVER_EXPORTED
             )
         }.onSuccess { remoteWatcherRegistered = true }
             .onFailure { Log.e(TAG, "could not register package watcher", it) }
@@ -437,7 +446,7 @@ class GuardianService : LifecycleService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val alert = NotificationCompat.Builder(this, CHANNEL_ALERT)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ALERT)
             .setSmallIcon(R.drawable.ic_shield)
             .setContentTitle(title)
             .setContentText(body)
@@ -447,7 +456,12 @@ class GuardianService : LifecycleService() {
             .setContentIntent(tap)
             .setAutoCancel(true)
             .setOnlyAlertOnce(true)
-            .build()
+
+        if (assessment.shouldIntervene) {
+            builder.setFullScreenIntent(tap, true)
+        }
+
+        val alert = builder.build()
         getSystemService(NotificationManager::class.java)
             .notify(ALERT_NOTIFICATION_ID, alert)
     }

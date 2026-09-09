@@ -49,11 +49,15 @@ import java.util.Locale
 class InterventionActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityInterventionBinding
+    private var remainingSeconds = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInterventionBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        val totalHold = if (com.prahari.guardian.BuildConfig.DEMO_MODE_ENABLED) 5 else HOLD_SECONDS
+        remainingSeconds = savedInstanceState?.getInt(KEY_REMAINING_SECONDS) ?: totalHold
 
         renderReasons(
             intent.getStringArrayListExtra(EXTRA_REASONS).orEmpty(),
@@ -78,7 +82,10 @@ class InterventionActivity : AppCompatActivity() {
             // screen. Pre-filled so a frightened person does not have to search.
             val number = TrustedContact.number(this)
             val intent = Intent(Intent.ACTION_DIAL).apply {
-                if (number != null) data = Uri.parse("tel:$number")
+                if (!number.isNullOrBlank()) {
+                    val sanitized = number.filter { it.isDigit() || it == '+' }
+                    data = Uri.fromParts("tel", sanitized, null)
+                }
             }
             runCatching { startActivity(intent) }
             finish()
@@ -88,18 +95,30 @@ class InterventionActivity : AppCompatActivity() {
             ?.let { getString(R.string.action_call_named, it) }
             ?: getString(R.string.action_call_someone)
 
-        binding.proceed.isEnabled = false
-        startHold()
+        if (remainingSeconds <= 0) {
+            binding.proceed.isEnabled = true
+            binding.proceed.text = getString(R.string.proceed_now)
+            binding.proceed.setOnClickListener { finish() }
+        } else {
+            binding.proceed.isEnabled = false
+            startHold()
+        }
 
         // Back must not dismiss. The one moment where removing the reflex exit
         // is correct — the user can still proceed, just not without choosing to.
         onBackPressedDispatcher.addCallback(this) { /* swallow */ }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_REMAINING_SECONDS, remainingSeconds)
+    }
+
     private fun startHold() = lifecycleScope.launch {
-        for (remaining in HOLD_SECONDS downTo 1) {
-            binding.proceed.text = getString(R.string.proceed_waiting, remaining)
+        while (remainingSeconds > 0) {
+            binding.proceed.text = getString(R.string.proceed_waiting, remainingSeconds)
             delay(1_000)
+            remainingSeconds -= 1
         }
         binding.proceed.text = getString(R.string.proceed_now)
         binding.proceed.isEnabled = true
@@ -216,6 +235,7 @@ class InterventionActivity : AppCompatActivity() {
         private const val EXTRA_CALLER = "caller_masked"
         private const val EXTRA_DURATION_SECONDS = "duration_seconds"
         private const val EXTRA_AMOUNT_PAISE = "amount_paise"
+        private const val KEY_REMAINING_SECONDS = "remaining_seconds"
         private const val FIELD_SEP = "|"
 
         /** `forLanguageTag` rather than the Locale constructor: same result, and

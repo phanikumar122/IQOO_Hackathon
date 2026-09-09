@@ -44,6 +44,8 @@
          activity-launch restriction, which we depend on to put the warning
          on screen while a payment app is in front. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Ensures heads-up / full-screen intervention can trigger reliably on Android 10-15 and OriginOS -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <!-- The intervention screen vibrates once when it appears. A phone held to
          the ear is not being looked at. -->
@@ -144,7 +146,8 @@
              could not be verified on OriginOS. Keeping both costs nothing. -->
         <receiver
             android:name=".signals.RemoteAccessWatcher"
-            android:exported="false">
+            android:exported="true"
+            tools:ignore="ExportedReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <data android:scheme="package" />

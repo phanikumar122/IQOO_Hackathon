@@ -46,8 +46,12 @@ class StreamingTranscriber(private val context: Context) {
 
     val isModelPresent: Boolean get() = modelDir()?.isDirectory == true
 
-    private fun modelDir(): File? =
-        File(context.getExternalFilesDir(null), MODEL_DIR_NAME).takeIf { it.exists() }
+    private fun modelDir(): File? {
+        val root = File(context.getExternalFilesDir(null), MODEL_DIR_NAME).takeIf { it.exists() } ?: return null
+        if (!root.isDirectory) return null
+        val nested = root.listFiles()?.firstOrNull { it.isDirectory && (File(it, "am").exists() || File(it, "conf").exists()) }
+        return nested ?: root
+    }
 
     /**
      * Emits recognised text as it arrives. Partial hypotheses are included:

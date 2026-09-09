@@ -12,6 +12,7 @@ import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.prahari.guardian.TrustedContact
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -49,6 +50,7 @@ class CallStateMonitor(
 
     private var tickJob: Job? = null
     private var lastNumber: String? = null
+    private var isStarted = false
 
     private val callback = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
         override fun onCallStateChanged(state: Int) {
@@ -68,15 +70,26 @@ class CallStateMonitor(
             @Suppress("DEPRECATION")
             intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
                 ?.takeIf { it.isNotBlank() }
-                ?.let { lastNumber = it }
+                ?.let { num ->
+                    lastNumber = num
+                    if (SignalStore.current.callActive && (SignalStore.current.callerMasked.isEmpty() || SignalStore.current.callerMasked == "unknown number")) {
+                        val known = isKnownNumber(num)
+                        SignalStore.onCallStarted(
+                            unknownCaller = !known,
+                            maskedNumber = mask(num)
+                        )
+                    }
+                }
         }
     }
 
     fun start() {
+        if (isStarted) return
         if (!hasPermission(Manifest.permission.READ_PHONE_STATE)) {
             Log.w(TAG, "READ_PHONE_STATE not granted — call signals will stay dormant")
             return
         }
+        isStarted = true
         runCatching {
             telephony.registerTelephonyCallback(context.mainExecutor, callback)
         }.onFailure { Log.e(TAG, "registerTelephonyCallback failed", it) }
@@ -92,6 +105,8 @@ class CallStateMonitor(
     }
 
     fun stop() {
+        if (!isStarted) return
+        isStarted = false
         tickJob?.cancel()
         runCatching { telephony.unregisterTelephonyCallback(callback) }
         runCatching { context.unregisterReceiver(numberReceiver) }
@@ -126,6 +141,8 @@ class CallStateMonitor(
     }
 
     private fun isKnownNumber(number: String): Boolean {
+        val trusted = TrustedContact.number(context)
+        if (trusted != null && numbersMatch(number, trusted)) return true
         if (!hasPermission(Manifest.permission.READ_CONTACTS)) return false
         val uri = Uri.withAppendedPath(
             ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number)
@@ -135,6 +152,13 @@ class CallStateMonitor(
                 uri, arrayOf(ContactsContract.PhoneLookup._ID), null, null, null
             )?.use { it.moveToFirst() } ?: false
         }.getOrDefault(false)
+    }
+
+    private fun numbersMatch(a: String, b: String): Boolean {
+        val da = a.filter(Char::isDigit)
+        val db = b.filter(Char::isDigit)
+        if (da.isEmpty() || db.isEmpty()) return false
+        return da == db || (da.length >= 7 && db.length >= 7 && (da.endsWith(db) || db.endsWith(da)))
     }
 
     private fun hasPermission(p: String) =
